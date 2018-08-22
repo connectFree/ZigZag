@@ -19,21 +19,19 @@ const std = @import("std");
 const assert = std.debug.assert;
 const math = std.math;
 
-const UNSIGNED_LONG_BITS: u32 = @sizeOf(u32) * 8;
-
 const RFC6479_BITS_TOTAL: u32 = 2048;
-const RFC6479_REDUNDANT_BITS: u32 = UNSIGNED_LONG_BITS;
-const RFC6479_REDUNDANT_BITS_SHIFTBY: u6 = (31 - @clz(u32(UNSIGNED_LONG_BITS)));
+const RFC6479_REDUNDANT_BITS: u32 = u32.bit_count;
+const RFC6479_REDUNDANT_BITS_SHIFTBY: u6 = (31 - @clz(u32(u32.bit_count)));
 const RFC6479_WINDOW_SIZE: u32 = RFC6479_BITS_TOTAL - RFC6479_REDUNDANT_BITS;
 
 
 comptime {
-  assert( UNSIGNED_LONG_BITS == 32 );
+  assert( u32.bit_count == 32 );
   assert( RFC6479_REDUNDANT_BITS_SHIFTBY == 5 );  
 }
 
 pub const RFC6479 = struct {
-  backtrack: [RFC6479_BITS_TOTAL / UNSIGNED_LONG_BITS]u32,
+  backtrack: [RFC6479_BITS_TOTAL / u32.bit_count]u32,
   counter: u64,
 
 
@@ -59,10 +57,10 @@ pub const RFC6479 = struct {
 
     if (their_counter > self.counter) {
       index_current = self.counter >> RFC6479_REDUNDANT_BITS_SHIFTBY;
-      top = math.min(index - index_current, RFC6479_BITS_TOTAL / UNSIGNED_LONG_BITS);
+      top = math.min(index - index_current, RFC6479_BITS_TOTAL / u32.bit_count);
 
       while (i <= top) : (i += 1) {
-        self.backtrack[(i + index_current) & ((RFC6479_BITS_TOTAL / UNSIGNED_LONG_BITS) - 1)] = 0;
+        self.backtrack[(i + index_current) & ((RFC6479_BITS_TOTAL / u32.bit_count) - 1)] = 0;
       }
 
       if (distance) |d| {
@@ -76,8 +74,8 @@ pub const RFC6479 = struct {
       }
     }
 
-    index &= (RFC6479_BITS_TOTAL / UNSIGNED_LONG_BITS) - 1;
-    var bitloc: u5 = @intCast(u5, their_counter & (UNSIGNED_LONG_BITS - 1));
+    index &= (RFC6479_BITS_TOTAL / u32.bit_count) - 1;
+    var bitloc: u5 = @intCast(u5, their_counter & (u32.bit_count - 1));
 
     if (self.backtrack[index] & (u32(1) << bitloc) != 0) {
       return error.AlreadyRecieved;// /* already received */
