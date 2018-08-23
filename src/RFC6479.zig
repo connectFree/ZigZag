@@ -75,7 +75,7 @@ pub const RFC6479 = struct {
     }
 
     index &= (RFC6479_BITS_TOTAL / u32.bit_count) - 1;
-    var bitloc: u5 = @intCast(u5, their_counter & (u32.bit_count - 1));
+    var bitloc: u5 = @truncate(u5, their_counter & (u32.bit_count - 1));
 
     if (self.backtrack[index] & (u32(1) << bitloc) != 0) {
       return error.AlreadyRecieved;// /* already received */
