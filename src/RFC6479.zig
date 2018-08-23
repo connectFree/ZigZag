@@ -91,12 +91,13 @@ test "rudimentary replay" {
   var i: u32 = 0;
   var counter = RFC6479.new();
 
-  while (i <= 1000) : (i += 1) {
+  while (i <= RFC6479_WINDOW_SIZE) : (i += 1) {
+    // should not error
     try counter.count(i, null);
   }
 
   i = 0;
-  while (i <= 1000) : (i += 1) {
+  while (i <= RFC6479_WINDOW_SIZE) : (i += 1) {
     var ok = false;
     counter.count(i, null) catch |err| {
       switch (err) {
@@ -108,6 +109,30 @@ test "rudimentary replay" {
     };
     assert(ok);
   }
+
+  // window wrap
+  try counter.count(65536, null);
+  i = 65536 - RFC6479_WINDOW_SIZE;
+  while (i <= 65535) : (i += 1) {
+    // should not error
+    try counter.count(i, null);
+  }
+
+  i = 65536 - 10 * RFC6479_WINDOW_SIZE;
+  while (i <= 65535) : (i += 1) {
+    var ok = false;
+    counter.count(i, null) catch |err| {
+      switch (err) {
+        error.AlreadyRecieved,
+        error.OutsideWindow => {
+          ok = true;
+        },
+      }
+    };
+    assert(ok);
+  }
+
+  // TODO: test for max u64 input
 
 }
 
