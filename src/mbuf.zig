@@ -155,3 +155,17 @@ pub const mbuf = struct {
     }
 
 };
+
+test "mbuf" {
+  var mb = try mbuf.alloc(debug.global_allocator, 0);
+  defer mb.deinit();
+  assert( mb.bytesLeft() == 0 );
+  try mb.write_mem("hi jim!");
+  mb.setPos(7);
+  try mb.write_mem("\xCA\xFE\xBA\xBE");
+  mb.setPos(0);
+  assert( mb.bytesLeft() == 11 );
+  mb.advance(7);
+  assert( mb.readIntBE(u32) == 0xCAFEBABE );
+  assert( mb.bytesLeft() == 0 );
+}
