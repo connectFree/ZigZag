@@ -58,4 +58,57 @@ pub const mbuf = struct {
         self.size = new_size;
     }
 
+    pub fn len(self: *const mbuf) usize {
+        return self.buf.len - 1;
+    }
+
+    /// Check that self.pos does not exceed self.end
+    /// This function panics because message buffers should go over
+    fn checkPos(self: *const mbuf) void {
+      if (self.pos > self.end)
+        @panic("Message Buffer position mark exceeds end mark");
+    }
+
+    /// Check that self.end does not exceed self.size
+    /// This function panics because message buffers should go over
+    fn checkEnd(self: *const mbuf) void {
+      if (self.end > self.size)
+        @panic("Message Buffer end mark exceeds buffer size");
+    }
+
+    pub fn toSlice(self: *const mbuf) []u8 {
+        return self.buf.toSlice()[self.pos..self.end];
+    }
+
+    pub fn toSliceConst(self: *const mbuf) []const u8 {
+        return self.buf.toSliceConst()[self.pos..self.end];
+    }
+
+    pub fn ptr(self: *const mbuf) [*]u8 {
+        return self.buf.items.ptr + self.pos;
+    }
+
+    pub fn bytesLeft(self: *const mbuf) usize {
+        return if (self.end > self.pos) self.end - self.pos else 0;
+    }
+
+    pub fn space(self: *const mbuf) usize {
+        return if (self.size > self.pos) self.size - self.pos else 0;
+    }
+
+    pub fn setPos(self: *mbuf, pos: usize) void {
+        self.pos = pos;
+        self.checkPos();
+    }
+
+    pub fn setEnd(self: *mbuf, end: usize) void {
+        self.end = end;
+        self.checkEnd();
+    }
+
+    pub fn advance(self: *mbuf, n: isize) void {
+        self.pos = @intCast(usize, @intCast(isize, self.pos) + n);
+        self.checkPos();
+    }
+
 };
