@@ -76,6 +76,29 @@ pub const mbuf = struct {
         @panic("Message Buffer end mark exceeds buffer size");
     }
 
+    pub fn write_mem(self: *mbuf, buf: []const u8) !void {
+        var rsize: usize = self.pos + buf.len;
+        if (rsize > self.size) {
+          const dsize = if (self.size != 0) self.size * 2 else DEFAULT_SIZE;
+          try self.resize( std.math.max(rsize, dsize) );
+        }
+        mem.copy(u8, self.buf.toSlice()[self.pos..], buf);
+        self.pos += buf.len;
+        self.end  = std.math.max(self.end, self.pos);
+    }
+
+    pub fn writeInt(self: *mbuf, value: var, endian: builtin.Endian) !void {
+        const size = (@typeOf(value).bit_count / 8);
+        var rsize: usize = self.pos + size;
+        if (rsize > self.size) {
+          const dsize = if (self.size != 0) self.size * 2 else DEFAULT_SIZE;
+          try self.resize( std.math.max(rsize, dsize) );
+        }
+        mem.writeInt(self.buf.toSlice()[self.pos..], value, endian);
+        self.pos += size;
+        self.end  = std.math.max(self.end, self.pos);
+    }
+
     pub fn toSlice(self: *const mbuf) []u8 {
         return self.buf.toSlice()[self.pos..self.end];
     }
