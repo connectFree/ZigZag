@@ -58,3 +58,10 @@ pub const Engine = struct {
 
 };
 
+test "default" {
+  const g_ident = "ConnectFree(R) EVER/IP(R) v1 (c) kristopher tate and ConnectFree Corporation";
+  const g_identkey = "BLANK KEY";
+
+  var e = Engine.init(g_ident, g_identkey);
+}
+
