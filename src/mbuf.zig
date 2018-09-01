@@ -20,3 +20,36 @@
 
 const std = @import("std");
 const debug = std.debug;
+const mem = std.mem;
+const Allocator = mem.Allocator;
+const assert = debug.assert;
+const ArrayList = std.ArrayList;
+
+const DEFAULT_SIZE: usize = 1 << 9;
+
+pub const mbuf = struct {
+    buf: ArrayList(u8),
+    size: usize, 
+    pos: usize, 
+    end: usize,
+
+    pub fn alloc(allocator: *Allocator, size: usize) !mbuf {
+        var self = allocEmpty(allocator);
+        try self.resize(if (size > 0) size else DEFAULT_SIZE);
+        return self;
+    }
+
+    pub fn allocEmpty(allocator: *Allocator) mbuf {
+        return mbuf {
+            .buf = ArrayList(u8).init(allocator),
+            .size = 0,
+            .pos = 0,
+            .end = 0,
+        };
+    }
+
+    pub fn deinit(self: *mbuf) void {
+        self.buf.deinit();
+    }
+
+};
