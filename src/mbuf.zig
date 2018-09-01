@@ -52,4 +52,10 @@ pub const mbuf = struct {
         self.buf.deinit();
     }
 
+    pub fn resize(self: *mbuf, new_size: usize) !void {
+        try self.buf.resize(new_size + 1);
+        self.buf.items[self.len()] = 0;
+        self.size = new_size;
+    }
+
 };
