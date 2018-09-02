@@ -99,20 +99,20 @@ pub const mbuf = struct {
         self.end  = std.math.max(self.end, self.pos);
     }
 
-    pub fn readIntLE(self: *mbuf, comptime T: type) T {
+    pub fn readIntLE(self: *mbuf, comptime T: type) !T {
       const size: usize = (T.bit_count / 8);
       if (size > self.bytesLeft())
-          @panic("tried to read beyond mbuf end");
+          return error.ReadOverflow; //@panic("tried to read beyond mbuf end");
       const result = mem.readIntLE(T, self.buf.toSliceConst()[self.pos..self.pos+size]);
       self.pos += size;
       self.end  = std.math.max(self.end, self.pos);
       return result;
     }
 
-    pub fn readIntBE(self: *mbuf, comptime T: type) T {
+    pub fn readIntBE(self: *mbuf, comptime T: type) !T {
       const size: usize = (T.bit_count / 8);
       if (size > self.bytesLeft())
-          @panic("tried to read beyond mbuf end");
+          return error.ReadOverflow; //@panic("tried to read beyond mbuf end");
       const result = mem.readIntBE(T, self.buf.toSliceConst()[self.pos..self.pos+size]);
       self.pos += size;
       self.end  = std.math.max(self.end, self.pos);
@@ -166,6 +166,6 @@ test "mbuf" {
   mb.setPos(0);
   assert( mb.bytesLeft() == 11 );
   mb.advance(7);
-  assert( mb.readIntBE(u32) == 0xCAFEBABE );
+  assert( (try mb.readIntBE(u32)) == 0xCAFEBABE );
   assert( mb.bytesLeft() == 0 );
 }
