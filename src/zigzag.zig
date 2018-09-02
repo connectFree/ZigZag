@@ -23,6 +23,7 @@ const Allocator = std.mem.Allocator;
 const HashMap = std.hash_map.HashMap;
 
 const mbuf = @import("mbuf.zig").mbuf;
+const RFC6479 = @import("RFC6479.zig").RFC6479;
 
 const NOISE_HASH_LEN = 32;
 const NOISE_PUBLIC_KEY_LEN = 32;
@@ -49,10 +50,59 @@ pub const Engine = struct {
 
   const SessionHashMap = HashMap([]const u8, Session, mem.hash_slice_u8, mem.eql_slice_u8);
 
+  pub const NoiseSessionEvent = enum {
+      NULL = 0
+    , INIT = 1
+    , CLOSE = 2
+    , ZERO = 3
+    , HSHAKE = 4
+    , HSXMIT = 5
+    , CONNECTED = 6
+    , REKEY = 7
+    , BEGIN_PILOT = 8
+    , BEGIN_COPILOT = 9
+    , MAXIMUM // must be last!
+  };
+
+  const NoiseSymmetricKey = struct {
+    key: [NOISE_SYMMETRIC_KEY_LEN]u8,
+    rfc6479_counter: RFC6479,
+    birthdate: u64,
+    is_valid: bool,
+
+    fn setKey( self: *NoiseSymmetricKey
+             , key: [NOISE_SYMMETRIC_KEY_LEN]u8) void {
+      self.key = key;
+    }
+
+    fn reset(self: *NoiseSymmetricKey) void {
+      rfc6479_counter.secureReset();
+      self.birthdate = now;
+      self.is_valid = true;
+    }
+  };
+
+  const NoiseKeyPair = struct {
+    tx: NoiseSymmetricKey,
+    rx: NoiseSymmetricKey,
+    remote_index: u32,
+    its_my_plane: bool,
+
+    //accounting
+    rx_bytes: u64,
+    tx_bytes: u64,
+  };
+
   /// Noise Session
   pub const Session = struct {
     engine: *Engine,
     pub_key: [NOISE_PUBLIC_KEY_LEN]u8,
+
+    keypair_now: NoiseKeyPair,
+    keypair_then: NoiseKeyPair,
+    keypair_next: NoiseKeyPair,
+
+    event_last: NoiseSessionEvent,
 
     fn getOrCreate( engine: *Engine
                   , public_key: [NOISE_PUBLIC_KEY_LEN]u8
@@ -116,6 +166,9 @@ pub const Engine = struct {
     return Engine.Session.getOrCreate(self, public_key, preshared_key);
   }
 
+  pub fn pubkey_get(self: *Engine) ![]const u8 {
+    return error.NoKeyLoaded;
+  }
 
   pub fn processIncoming(self: *Engine, mb: *mbuf) !void {
     var pkt_type: u32 = try mb.readIntLE(u32);
