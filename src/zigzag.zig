@@ -73,6 +73,16 @@ pub const Engine = struct {
       return session;
     }
 
+    /// format function for std.fmt
+    pub fn format(
+        self: *const Session,
+        comptime _fmt: []const u8,
+        context: var,
+        comptime FmtError: type,
+        output: fn (@typeOf(context), []const u8) FmtError!void,
+    ) FmtError!void {
+      return fmt.format(context, FmtError, output, "[SESSION pub:{X}]@0x{x}", self.pub_key, @ptrToInt(self));
+    }
   };
 
   pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) Engine {
