@@ -13,11 +13,22 @@
 //
 // See the LICENSE file at the root of this project for complete information.
 //
-// 
+//
 
 const std = @import("std");
+const mem = std.mem;
+const fmt = std.fmt;
+const debug = std.debug;
+const Allocator = std.mem.Allocator;
+const HashMap = std.hash_map.HashMap;
+
+const mbuf = @import("mbuf.zig").mbuf;
 
 const NOISE_HASH_LEN = 32;
+const NOISE_PUBLIC_KEY_LEN = 32;
+const NOISE_SECRET_KEY_LEN = 32;
+const NOISE_SYMMETRIC_KEY_LEN = 32; //crypto_aead_chacha20poly1305_KEYBYTES
+
 const blake2s = std.crypto.Blake2s256;
 
 const g_hshake = "Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s";
@@ -30,11 +41,25 @@ const g_hshake = "Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s";
 
 pub const Engine = struct {
 
+  allocator: *Allocator,
+  session_map: SessionHashMap,
+
   hshake_hash: [NOISE_HASH_LEN]u8,
   hshake_chaining_key: [NOISE_HASH_LEN]u8,
 
-  pub fn init(ident: []const u8, identkey: []const u8) Engine {
+  const SessionHashMap = HashMap([]const u8, Session, mem.hash_slice_u8, mem.eql_slice_u8);
+
+  /// Noise Session
+  pub const Session = struct {
+    engine: *Engine,
+    pub_key: [NOISE_PUBLIC_KEY_LEN]u8,
+
+  };
+
+  pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) Engine {
     var out = Engine{
+      .allocator = allocator,
+      .session_map = SessionHashMap.init(allocator),
       .hshake_hash = undefined,
       .hshake_chaining_key = undefined,
     };
@@ -54,7 +79,10 @@ pub const Engine = struct {
     return out;
   }
 
-  pub fn deinit(self: *Engine) void { }
+  pub fn deinit(self: *Engine) void {
+    self.session_map.deinit();
+  }
+
 
 };
 
@@ -62,6 +90,7 @@ test "default" {
   const g_ident = "ConnectFree(R) EVER/IP(R) v1 (c) kristopher tate and ConnectFree Corporation";
   const g_identkey = "BLANK KEY";
 
-  var e = Engine.init(g_ident, g_identkey);
-}
+  var e = Engine.init(debug.global_allocator, g_ident, g_identkey);
+  defer e.deinit();
 
+}
