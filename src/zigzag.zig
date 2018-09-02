@@ -54,6 +54,25 @@ pub const Engine = struct {
     engine: *Engine,
     pub_key: [NOISE_PUBLIC_KEY_LEN]u8,
 
+    fn getOrCreate( engine: *Engine
+                  , public_key: [NOISE_PUBLIC_KEY_LEN]u8
+                  , preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN]u8) !*Session {
+
+      const result = try engine.session_map.getOrPut( public_key );
+      if (result.found_existing) {
+        return &result.kv.value;
+      }
+
+      // init Session
+
+      const session = &result.kv.value;
+
+      session.engine = engine;
+      session.pub_key = public_key;
+
+      return session;
+    }
+
   };
 
   pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) Engine {
@@ -83,6 +102,10 @@ pub const Engine = struct {
     self.session_map.deinit();
   }
 
+  pub fn sessionGetOrCreate(self: *Engine, public_key: var, preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN] u8) !*Engine.Session {
+    return Engine.Session.getOrCreate(self, public_key, preshared_key);
+  }
+
 
 };
 
@@ -92,5 +115,10 @@ test "default" {
 
   var e = Engine.init(debug.global_allocator, g_ident, g_identkey);
   defer e.deinit();
+
+  var pb: [NOISE_PUBLIC_KEY_LEN]u8 = undefined;
+  try fmt.hexToBytes("909A312BB12ED1F819B3521AC4C1E896F2160507FFC1C8381E3B07BB16BD1706", pb[0..]);
+  var a_session = try e.sessionGetOrCreate(pb, null);
+  debug.warn("got a session: {}\n", a_session);
 
 }
