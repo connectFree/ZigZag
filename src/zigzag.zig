@@ -117,6 +117,13 @@ pub const Engine = struct {
   }
 
 
+  pub fn processIncoming(self: *Engine, mb: *mbuf) !void {
+    var pkt_type: u32 = try mb.readIntLE(u32);
+    switch (pkt_type) {
+      1 => std.debug.warn("got type 1\n"),
+      else => return error.BadMessage,
+    }
+  }
 };
 
 test "default" {
