@@ -265,9 +265,7 @@ test "default" {
   e1.genRandomIdentity();
   e2.genRandomIdentity();
 
-  var pb: [NOISE_PUBLIC_KEY_LEN]u8 = undefined;
-  try fmt.hexToBytes("909A312BB12ED1F819B3521AC4C1E896F2160507FFC1C8381E3B07BB16BD1706", pb[0..]);
-  var a_session = try e.sessionGetOrCreate(pb, null);
-  debug.warn("got a session: {}\n", a_session);
+  var e1_e2_session = try e1.sessionGetOrCreate(e2.static_identity.pk, null);
+  debug.warn("e1_e2_session: {}\n", e1_e2_session);
 
 }
