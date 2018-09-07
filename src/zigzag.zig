@@ -26,6 +26,8 @@ const HashMap = std.hash_map.HashMap;
 const mbuf = @import("mbuf.zig").mbuf;
 const RFC6479 = @import("RFC6479.zig").RFC6479;
 
+const X25519 = std.crypto.X25519;
+
 const NOISE_HASH_LEN = 32;
 const NOISE_PUBLIC_KEY_LEN = 32;
 const NOISE_SECRET_KEY_LEN = 32;
@@ -155,7 +157,7 @@ pub const Engine = struct {
     tx_bytes: usize,
 
     fn getOrCreate( engine: *Engine
-                  , public_key: [NOISE_PUBLIC_KEY_LEN]u8
+                  , public_key: []const u8
                   , preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN]u8) !*Session {
 
       const result = try engine.session_map.getOrPut( public_key );
@@ -164,11 +166,10 @@ pub const Engine = struct {
       }
 
       // init Session
-
       const session = &result.kv.value;
 
       session.engine = engine;
-      session.pub_key = public_key;
+      std.mem.copy(u8, session.pub_key[0..], public_key);
 
       return session;
     }
@@ -220,7 +221,20 @@ pub const Engine = struct {
     self.session_map.deinit();
   }
 
-  pub fn sessionGetOrCreate(self: *Engine, public_key: var, preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN] u8) !*Engine.Session {
+  pub fn genRandomIdentity(self: *Engine) void {
+    if (self.static_identity.has_identity) {
+      @panic("This engine already has static identity!");
+    }
+    self.prng.random.bytes(self.static_identity.sk[0..32]);
+    std.debug.assert(X25519.createPublicKey(self.static_identity.pk[0..], self.static_identity.sk));
+    self.static_identity.has_identity = true;
+    debug.warn("SK: {X}\n", self.static_identity.sk);
+    debug.warn("PK: {X}\n", self.static_identity.pk);
+  }
+
+  pub fn sessionGetOrCreate( self: *Engine
+                           , public_key: var
+                           , preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN] u8) !*Engine.Session {
     return Engine.Session.getOrCreate(self, public_key, preshared_key);
   }
 
@@ -241,8 +255,15 @@ test "default" {
   const g_ident = "ConnectFree(R) EVER/IP(R) v1 (c) kristopher tate and ConnectFree Corporation";
   const g_identkey = "BLANK KEY";
 
-  var e = Engine.init(debug.global_allocator, g_ident, g_identkey);
-  defer e.deinit();
+  //init engines
+  var e1 = try Engine.init(debug.global_allocator, g_ident, g_identkey);
+  defer e1.deinit();
+  var e2 = try Engine.init(debug.global_allocator, g_ident, g_identkey);
+  defer e2.deinit();
+
+  //generate random identities
+  e1.genRandomIdentity();
+  e2.genRandomIdentity();
 
   var pb: [NOISE_PUBLIC_KEY_LEN]u8 = undefined;
   try fmt.hexToBytes("909A312BB12ED1F819B3521AC4C1E896F2160507FFC1C8381E3B07BB16BD1706", pb[0..]);
