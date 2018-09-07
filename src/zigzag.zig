@@ -48,7 +48,6 @@ pub const Engine = struct {
 
   allocator: *Allocator,
   session_map: SessionHashMap,
-
   hshake_hash: [NOISE_HASH_LEN]u8,
   hshake_chaining_key: [NOISE_HASH_LEN]u8,
   prng: Isaac64,
@@ -97,6 +96,7 @@ pub const Engine = struct {
   };
 
   const NoiseKeyPair = struct {
+    session: *Session,
     tx: NoiseSymmetricKey,
     rx: NoiseSymmetricKey,
     remote_index: u32,
@@ -138,15 +138,21 @@ pub const Engine = struct {
     engine: *Engine,
     pub_key: [NOISE_PUBLIC_KEY_LEN]u8,
 
-    keypair_now: NoiseKeyPair,
-    keypair_then: NoiseKeyPair,
-    keypair_next: NoiseKeyPair,
+    keypair_now: ?*NoiseKeyPair,
+    keypair_then: ?*NoiseKeyPair,
+    keypair_next: ?*NoiseKeyPair,
 
     event_last: NoiseSessionEvent,
 
     // timestamp of when we last sent a handshake
     last_sent_handshake: u64,
     handshake: NoiseSessionHandshake,
+
+    //Accounting
+    rx_last: u64,
+    rx_bytes: usize,
+    tx_last: u64,
+    tx_bytes: usize,
 
     fn getOrCreate( engine: *Engine
                   , public_key: [NOISE_PUBLIC_KEY_LEN]u8
@@ -202,13 +208,15 @@ pub const Engine = struct {
     b.update( identkey );
     b.final( out.hshake_hash[0..] );
 
-    std.debug.warn("hshake_chaining_key {X}\n", out.hshake_chaining_key);
-    std.debug.warn("hshake_hash {X}\n", out.hshake_hash);
+    //std.debug.warn("hshake_chaining_key {X}\n", out.hshake_chaining_key);
+    //std.debug.warn("hshake_hash {X}\n", out.hshake_hash);
 
     return out;
   }
 
   pub fn deinit(self: *Engine) void {
+    //TODO: secure wipe memory
+    debug.warn("TODO: secure wipe memory\n");
     self.session_map.deinit();
   }
 
