@@ -16,6 +16,7 @@
 //
 
 const std = @import("std");
+const builtin = @import("builtin");
 const mem = std.mem;
 const fmt = std.fmt;
 const debug = std.debug;
@@ -29,6 +30,8 @@ const NOISE_HASH_LEN = 32;
 const NOISE_PUBLIC_KEY_LEN = 32;
 const NOISE_SECRET_KEY_LEN = 32;
 const NOISE_SYMMETRIC_KEY_LEN = 32; //crypto_aead_chacha20poly1305_KEYBYTES
+
+const Isaac64 = std.rand.Isaac64;
 
 const blake2s = std.crypto.Blake2s256;
 
@@ -47,6 +50,7 @@ pub const Engine = struct {
 
   hshake_hash: [NOISE_HASH_LEN]u8,
   hshake_chaining_key: [NOISE_HASH_LEN]u8,
+  prng: Isaac64,
 
   const SessionHashMap = HashMap([]const u8, Session, mem.hash_slice_u8, mem.eql_slice_u8);
 
@@ -135,12 +139,17 @@ pub const Engine = struct {
     }
   };
 
-  pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) Engine {
+  pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) !Engine {
+    var rbuf: [8]u8 = undefined;
+    try std.os.getRandomBytes(rbuf[0..]);
+    const seed = mem.readInt(rbuf[0..8], u64, builtin.Endian.Little);
+
     var out = Engine{
       .allocator = allocator,
       .session_map = SessionHashMap.init(allocator),
       .hshake_hash = undefined,
       .hshake_chaining_key = undefined,
+      .prng = Isaac64.init(seed),
     };
 
     // calculate chaining keys
