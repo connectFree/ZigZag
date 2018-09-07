@@ -51,6 +51,7 @@ pub const Engine = struct {
   hshake_hash: [NOISE_HASH_LEN]u8,
   hshake_chaining_key: [NOISE_HASH_LEN]u8,
   prng: Isaac64,
+  static_identity: NoiseStaticIdent,
 
   const SessionHashMap = HashMap([]const u8, Session, mem.hash_slice_u8, mem.eql_slice_u8);
 
@@ -95,6 +96,12 @@ pub const Engine = struct {
     //accounting
     rx_bytes: u64,
     tx_bytes: u64,
+  };
+
+  const NoiseStaticIdent = struct {
+    has_identity: bool,
+    pk: [NOISE_PUBLIC_KEY_LEN]u8,
+    sk: [NOISE_SECRET_KEY_LEN]u8,
   };
 
   /// Noise Session
@@ -150,6 +157,7 @@ pub const Engine = struct {
       .hshake_hash = undefined,
       .hshake_chaining_key = undefined,
       .prng = Isaac64.init(seed),
+      .static_identity = undefined,
     };
 
     // calculate chaining keys
