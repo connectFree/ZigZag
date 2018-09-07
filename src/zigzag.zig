@@ -30,6 +30,7 @@ const NOISE_HASH_LEN = 32;
 const NOISE_PUBLIC_KEY_LEN = 32;
 const NOISE_SECRET_KEY_LEN = 32;
 const NOISE_SYMMETRIC_KEY_LEN = 32; //crypto_aead_chacha20poly1305_KEYBYTES
+const NOISE_TIMESTAMP_LEN = 12; //TAI64_N_LEN
 
 const Isaac64 = std.rand.Isaac64;
 
@@ -69,6 +70,14 @@ pub const Engine = struct {
     , MAXIMUM // must be last!
   };
 
+  const NoiseHandshakeState = enum {
+      ZEROED
+    , CREATED_INITIATION
+    , CONSUMED_INITIATION
+    , CREATED_RESPONSE
+    , CONSUMED_RESPONSE
+  };
+
   const NoiseSymmetricKey = struct {
     key: [NOISE_SYMMETRIC_KEY_LEN]u8,
     rfc6479_counter: RFC6479,
@@ -104,6 +113,26 @@ pub const Engine = struct {
     sk: [NOISE_SECRET_KEY_LEN]u8,
   };
 
+  const NoiseSessionHandshake = struct {
+    state: NoiseHandshakeState,
+    last_initiation_consumption: u64,
+    static_identity: NoiseStaticIdent,
+
+    ephemeral_private: [NOISE_SECRET_KEY_LEN]u8,
+    remote_static: [NOISE_PUBLIC_KEY_LEN]u8,
+    remote_ephemeral: [NOISE_PUBLIC_KEY_LEN]u8,
+    precomputed_static_static: [NOISE_PUBLIC_KEY_LEN]u8,
+
+    preshared_key: [NOISE_SYMMETRIC_KEY_LEN]u8,
+
+    hash: [NOISE_HASH_LEN]u8,
+    chaining_key: [NOISE_HASH_LEN]u8,
+
+    latest_timestamp: [NOISE_TIMESTAMP_LEN]u8,
+    remote_index: u32,
+
+  };
+
   /// Noise Session
   pub const Session = struct {
     engine: *Engine,
@@ -114,6 +143,10 @@ pub const Engine = struct {
     keypair_next: NoiseKeyPair,
 
     event_last: NoiseSessionEvent,
+
+    // timestamp of when we last sent a handshake
+    last_sent_handshake: u64,
+    handshake: NoiseSessionHandshake,
 
     fn getOrCreate( engine: *Engine
                   , public_key: [NOISE_PUBLIC_KEY_LEN]u8
