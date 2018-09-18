@@ -210,7 +210,124 @@ pub const Engine = struct {
                        , @ptrToInt(self)
                        );
     }
-  };
+
+    fn hs_step1_pilot(self: *Session) void {
+//      hs = &ns->handshake;
+//
+//      if (!hs->static_identity->has_identity)
+//        goto out;
+      const hs = self.handshake;
+
+      if (!self.engine.static_identity.has_identity) {
+        @panic("this session requires an engine identity to initiate step1!");
+      }
+//
+//      if (!is_retry)
+//        ns->tmr_hs_attempts = 0;
+//
+//      if ( ns->event_last == NOISE_SESSION_EVENT_CONNECTED
+//        || ns->event_last > NOISE_SESSION_EVENT_REKEY )
+//        return EALREADY;
+//
+//      if (ns->last_sent_handshake + REKEY_TIMEOUT > tmr_jiffies())
+//        return EALREADY;
+//
+//      ns->last_sent_handshake = tmr_jiffies();
+//
+//      _handshake_init(ns->ne, hs->chaining_key, hs->hash, hs->remote_static);
+//
+//      lsock_install(lsock, &hs->lsock_le, ns);
+//
+//      /* e */
+//      randombytes_buf(hs->ephemeral_private, 32);
+//      if (0 != crypto_scalarmult_base(out_unencrypted_ephemeral, hs->ephemeral_private))
+//        goto out;
+//
+//      _message_ephemeral( out_unencrypted_ephemeral
+//                        , out_unencrypted_ephemeral
+//                        , hs->chaining_key
+//                        , hs->hash);
+//
+//      /* es */
+//      if (!_mix_dh( hs->chaining_key
+//                  , key
+//                  , hs->ephemeral_private
+//                  , hs->remote_static))
+//        goto out;
+//
+//      /* s */
+//      _mhash_message_encrypt( out_encrypted_static
+//                            , hs->static_identity->public
+//                            , NOISE_PUBLIC_KEY_LEN
+//                            , key
+//                            , hs->hash);
+//
+//      /* ss */
+//      _kdf( hs->chaining_key
+//          , key
+//          , NULL
+//          , hs->precomputed_static_static
+//          , NOISE_HASH_LEN
+//          , NOISE_SYMMETRIC_KEY_LEN
+//          , 0
+//          , NOISE_PUBLIC_KEY_LEN
+//          , hs->chaining_key);
+//
+//      /* {t} */
+//
+//      tai64n_now( timestamp );
+//
+//      _mhash_message_encrypt( out_encrypted_timestamp
+//                            , timestamp
+//                            , NOISE_TIMESTAMP_LEN
+//                            , key
+//                            , hs->hash);
+//
+//      /* unlink if were linked */
+//      hash_unlink(&ns->lookup.le);
+//
+//      /* reup */
+//      ns->lookup.id = ns->ne->sessions_counter++;
+//      hash_append( ns->ne->idlookup
+//                 , ns->lookup.id
+//                 , &ns->lookup.le
+//                 , &ns->lookup);
+//
+//      out_sender_index = arch_htole32( ns->lookup.id );
+//
+//      hs->state = HANDSHAKE_CREATED_INITIATION;
+//
+//      /* write and send */
+//
+//      mb = mbuf_alloc(EVER_OUTWARD_MBE_LENGTH*2);
+//      mb->pos = EVER_OUTWARD_MBE_POS;
+//      mb->end = EVER_OUTWARD_MBE_POS;
+//
+//      mb_pos = mb->pos;
+//
+//      mbuf_write_u32(mb, arch_htole32( 1 ));
+//      mbuf_write_u32(mb, out_sender_index);
+//      mbuf_write_mem(mb, out_unencrypted_ephemeral, 32);
+//      mbuf_write_mem(mb, out_encrypted_static, NOISE_ENCRYPTED_LEN(32));
+//      mbuf_write_mem(mb, out_encrypted_timestamp, NOISE_ENCRYPTED_LEN(12));
+//
+//      mbuf_fill(mb, 0, 16); /* mac1 */
+//      mbuf_fill(mb, 0, 16); /* mac2 */
+//
+//      /*debug("resetting position: %u\n", mb->pos - mb_pos);*/
+//
+//      mbuf_set_pos(mb, mb_pos);
+//
+//      noise_session_tmr_control(ns, NOISE_TIMER_ON_HAND_INIT);
+//
+//      (void)lsock_forward(&hs->lsock_le, SOCK_TYPE_DATA_MB, mb);
+//
+//    out:
+//      sodium_memzero(key, NOISE_SYMMETRIC_KEY_LEN);
+//      mb = mem_deref(mb);
+    }
+
+  }; //X:E Session
 
   pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) !Engine {
     var rbuf: [8]u8 = undefined;
@@ -293,5 +410,6 @@ test "default" {
 
   var e1_e2_session = try e1.sessionGetOrCreate(e2.static_identity.pk, null);
   debug.warn("e1_e2_session: {}\n", e1_e2_session);
+  e1_e2_session.hs_step1_pilot();
 
 }
