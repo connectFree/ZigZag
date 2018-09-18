@@ -133,6 +133,10 @@ pub const Engine = struct {
     latest_timestamp: [NOISE_TIMESTAMP_LEN]u8,
     remote_index: u32,
 
+    fn secureZero(self: *NoiseSessionHandshake) void {
+      mem.secureZero(u8, @ptrCast([*]u8, self)[0..@sizeOf(NoiseSessionHandshake)]);
+    }
+
   };
 
   /// Noise Session
