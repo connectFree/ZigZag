@@ -72,7 +72,8 @@ pub const Engine = struct {
   };
 
   const NoiseHandshakeState = enum {
-      ZEROED
+      UNINITIALIZED
+    , ZEROED
     , CREATED_INITIATION
     , CONSUMED_INITIATION
     , CREATED_RESPONSE
