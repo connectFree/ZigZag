@@ -184,7 +184,13 @@ pub const Engine = struct {
         comptime FmtError: type,
         output: fn (@typeOf(context), []const u8) FmtError!void,
     ) FmtError!void {
-      return fmt.format(context, FmtError, output, "[SESSION pub:{X}]@0x{x}", self.pub_key, @ptrToInt(self));
+      return fmt.format( context
+                       , FmtError
+                       , output
+                       , "[SESSION pub:{X}]@0x{x}"
+                       , self.handshake.remote_static
+                       , @ptrToInt(self)
+                       );
     }
   };
 
