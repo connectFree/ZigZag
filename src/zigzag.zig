@@ -173,6 +173,24 @@ pub const Engine = struct {
 
       session.engine = engine;
 
+      //setup handshake information
+      session.handshake.secureZero();
+
+      //copy public key into memory
+      std.mem.copy(u8, session.handshake.remote_static[0..], public_key);
+
+      if (preshared_key) |psk| {
+        std.mem.copy(u8, session.handshake.preshared_key[0..], psk);
+      }
+
+      if (session.engine.static_identity.has_identity) {
+        debug.assert( X25519.create( session.handshake.precomputed_static_static[0..] // q
+                                   , session.engine.static_identity.sk[0..] // n
+                                   , session.handshake.remote_static[0..] )); // p
+      }
+
+      session.handshake.state = NoiseHandshakeState.ZEROED;
+
       return session;
     }
 
