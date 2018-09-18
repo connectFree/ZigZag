@@ -119,7 +119,6 @@ pub const Engine = struct {
   const NoiseSessionHandshake = struct {
     state: NoiseHandshakeState,
     last_initiation_consumption: u64,
-    static_identity: NoiseStaticIdent,
 
     ephemeral_private: [NOISE_SECRET_KEY_LEN]u8,
     remote_static: [NOISE_PUBLIC_KEY_LEN]u8,
@@ -139,7 +138,6 @@ pub const Engine = struct {
   /// Noise Session
   pub const Session = struct {
     engine: *Engine,
-    pub_key: [NOISE_PUBLIC_KEY_LEN]u8,
 
     keypair_now: ?*NoiseKeyPair,
     keypair_then: ?*NoiseKeyPair,
@@ -170,7 +168,6 @@ pub const Engine = struct {
       const session = &result.kv.value;
 
       session.engine = engine;
-      std.mem.copy(u8, session.pub_key[0..], public_key);
 
       return session;
     }
