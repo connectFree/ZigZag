@@ -281,6 +281,11 @@ pub const Engine = struct.{
         return error.Already;
 
       self.last_sent_handshake = self.engine.sys_unixtime();
+
+      self.handshake.mix( &self.handshake.chaining_key
+                        , &self.handshake.hash
+                        , &self.handshake.remote_static );
+
 //
 //      lsock_install(lsock, &hs->lsock_le, ns);
 //
