@@ -53,6 +53,18 @@ const g_hshake = "Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s";
 // struct noise_keypair
 // struct noise_symmetric_key
 
+// X:S TOOLS
+
+fn _mix_hash( hash: *[NOISE_HASH_LEN]u8, src: []const u8 ) void {
+  var b = blake2s.init();
+  b.update( hash[0..] );
+  b.update( src[0..] );
+  b.final( hash[0..] );
+}
+
+
+// X:E TOOLS
+
 pub const Engine = struct.{
 
   allocator: *Allocator,
@@ -144,6 +156,16 @@ pub const Engine = struct.{
 
     fn secureZero(self: *NoiseSessionHandshake) void {
       mem.secureZero(u8, @ptrCast([*]u8, self)[0..@sizeOf(NoiseSessionHandshake)]);
+    }
+
+    fn mix( self: *NoiseSessionHandshake
+          , chaining_key: *const [NOISE_HASH_LEN] u8
+          , hash: *const [NOISE_HASH_LEN] u8
+          , remote_static: *const [NOISE_PUBLIC_KEY_LEN] u8
+          ) void {
+      std.mem.copy(u8, self.hash[0..], hash);
+      std.mem.copy(u8, self.chaining_key[0..], chaining_key);
+      _mix_hash(&self.hash, remote_static[0..]);
     }
 
   };
