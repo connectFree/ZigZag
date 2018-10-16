@@ -28,6 +28,13 @@ const RFC6479 = @import("RFC6479.zig").RFC6479;
 
 const X25519 = std.crypto.X25519;
 
+
+const REKEY_TIMEOUT = 5000;
+const REKEY_TIMEOUT_JITTER_MAX = 333;
+const REKEY_AFTER_TIME = 120000;
+const KEEPALIVE_TIMEOUT = 10000;
+const REJECT_AFTER_TIME = 180000;
+
 const NOISE_HASH_LEN = 32;
 const NOISE_PUBLIC_KEY_LEN = 32;
 const NOISE_SECRET_KEY_LEN = 32;
@@ -193,6 +200,8 @@ pub const Engine = struct.{
 
       session.handshake.state = NoiseHandshakeState.ZEROED;
 
+      session.run_event(NoiseSessionEvent.INIT);
+
       return session;
     }
 
@@ -213,12 +222,16 @@ pub const Engine = struct.{
                        );
     }
 
-    fn hs_step1_pilot(self: *Session) void {
+    fn run_event(self: *Session, event: NoiseSessionEvent) void {
+      //TODO: do timers, etc.
+      self.event_last = event;
+    }
+
+    fn hs_step1_pilot(self: *Session) !void {
 //      hs = &ns->handshake;
 //
 //      if (!hs->static_identity->has_identity)
 //        goto out;
-      const hs = self.handshake;
 
       if (!self.engine.static_identity.has_identity) {
         @panic("this session requires an engine identity to initiate step1!");
@@ -226,17 +239,26 @@ pub const Engine = struct.{
 //
 //      if (!is_retry)
 //        ns->tmr_hs_attempts = 0;
-//
-//      if ( ns->event_last == NOISE_SESSION_EVENT_CONNECTED
-//        || ns->event_last > NOISE_SESSION_EVENT_REKEY )
-//        return EALREADY;
-//
-//      if (ns->last_sent_handshake + REKEY_TIMEOUT > tmr_jiffies())
-//        return EALREADY;
-//
-//      ns->last_sent_handshake = tmr_jiffies();
-//
-//      _handshake_init(ns->ne, hs->chaining_key, hs->hash, hs->remote_static);
+
+      debug.warn("event: {}\n", self.event_last);
+      switch(self.event_last) {
+          NoiseSessionEvent.NULL => unreachable
+        , NoiseSessionEvent.INIT => {} // OK
+        , NoiseSessionEvent.CLOSE
+        , NoiseSessionEvent.ZERO
+        , NoiseSessionEvent.HSHAKE
+        , NoiseSessionEvent.HSXMIT
+        , NoiseSessionEvent.CONNECTED
+        , NoiseSessionEvent.REKEY
+        , NoiseSessionEvent.BEGIN_PILOT
+        , NoiseSessionEvent.BEGIN_COPILOT
+        , NoiseSessionEvent.MAXIMUM => unreachable
+      }
+
+      if (self.last_sent_handshake + REKEY_TIMEOUT > self.engine.sys_unixtime())
+        return error.Already;
+
+      self.last_sent_handshake = self.engine.sys_unixtime();
 //
 //      lsock_install(lsock, &hs->lsock_le, ns);
 //
@@ -422,6 +444,6 @@ test "default" {
 
   var e1_e2_session = try e1.sessionGetOrCreate(e2.static_identity.pk, null);
   debug.warn("e1_e2_session: {}\n", e1_e2_session);
-  e1_e2_session.hs_step1_pilot();
+  _ = try e1_e2_session.hs_step1_pilot();
 
 }
