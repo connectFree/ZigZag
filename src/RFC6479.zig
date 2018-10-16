@@ -27,16 +27,16 @@ const RFC6479_WINDOW_SIZE: u32 = RFC6479_BITS_TOTAL - RFC6479_REDUNDANT_BITS;
 
 comptime {
   assert( u32.bit_count == 32 );
-  assert( RFC6479_REDUNDANT_BITS_SHIFTBY == 5 );  
+  assert( RFC6479_REDUNDANT_BITS_SHIFTBY == 5 );
 }
 
-pub const RFC6479 = struct {
+pub const RFC6479 = struct.{
   backtrack: [RFC6479_BITS_TOTAL / u32.bit_count]u32,
   counter: u64,
 
 
   pub fn new() RFC6479 {
-    return RFC6479 {
+    return RFC6479.{
       .backtrack = undefined,
       .counter = 0,
     };

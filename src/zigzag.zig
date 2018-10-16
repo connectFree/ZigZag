@@ -46,7 +46,7 @@ const g_hshake = "Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s";
 // struct noise_keypair
 // struct noise_symmetric_key
 
-pub const Engine = struct {
+pub const Engine = struct.{
 
   allocator: *Allocator,
   session_map: SessionHashMap,
@@ -57,7 +57,7 @@ pub const Engine = struct {
 
   const SessionHashMap = HashMap([]const u8, Session, mem.hash_slice_u8, mem.eql_slice_u8);
 
-  pub const NoiseSessionEvent = enum {
+  pub const NoiseSessionEvent = enum.{
       NULL = 0
     , INIT = 1
     , CLOSE = 2
@@ -71,7 +71,7 @@ pub const Engine = struct {
     , MAXIMUM // must be last!
   };
 
-  const NoiseHandshakeState = enum {
+  const NoiseHandshakeState = enum.{
       UNINITIALIZED
     , ZEROED
     , CREATED_INITIATION
@@ -80,7 +80,7 @@ pub const Engine = struct {
     , CONSUMED_RESPONSE
   };
 
-  const NoiseSymmetricKey = struct {
+  const NoiseSymmetricKey = struct.{
     key: [NOISE_SYMMETRIC_KEY_LEN]u8,
     rfc6479_counter: RFC6479,
     birthdate: u64,
@@ -98,7 +98,7 @@ pub const Engine = struct {
     }
   };
 
-  const NoiseKeyPair = struct {
+  const NoiseKeyPair = struct.{
     session: *Session,
     tx: NoiseSymmetricKey,
     rx: NoiseSymmetricKey,
@@ -110,13 +110,13 @@ pub const Engine = struct {
     tx_bytes: u64,
   };
 
-  const NoiseStaticIdent = struct {
+  const NoiseStaticIdent = struct.{
     has_identity: bool,
     pk: [NOISE_PUBLIC_KEY_LEN]u8,
     sk: [NOISE_SECRET_KEY_LEN]u8,
   };
 
-  const NoiseSessionHandshake = struct {
+  const NoiseSessionHandshake = struct.{
     state: NoiseHandshakeState,
     last_initiation_consumption: u64,
 
@@ -140,7 +140,7 @@ pub const Engine = struct {
   };
 
   /// Noise Session
-  pub const Session = struct {
+  pub const Session = struct.{
     engine: *Engine,
 
     keypair_now: ?*NoiseKeyPair,
@@ -334,7 +334,7 @@ pub const Engine = struct {
     try std.os.getRandomBytes(rbuf[0..]);
     const seed = mem.readInt(rbuf[0..8], u64, builtin.Endian.Little);
 
-    var out = Engine{
+    var out = Engine.{
       .allocator = allocator,
       .session_map = SessionHashMap.init(allocator),
       .hshake_hash = undefined,
