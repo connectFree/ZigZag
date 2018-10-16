@@ -88,7 +88,8 @@ pub const Engine = struct.{
     is_valid: bool,
 
     fn setKey( self: *NoiseSymmetricKey
-             , key: [NOISE_SYMMETRIC_KEY_LEN]u8) void {
+             , key: *const [NOISE_SYMMETRIC_KEY_LEN]u8
+             ) void {
       self.key = key;
     }
 
@@ -162,7 +163,7 @@ pub const Engine = struct.{
 
     fn getOrCreate( engine: *Engine
                   , public_key: []const u8
-                  , preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN]u8) !*Session {
+                  , preshared_key: ?*const [NOISE_SYMMETRIC_KEY_LEN]u8) !*Session {
 
       const result = try engine.session_map.getOrPut( public_key );
       if (result.found_existing) {
@@ -382,7 +383,7 @@ pub const Engine = struct.{
 
   pub fn sessionGetOrCreate( self: *Engine
                            , public_key: var
-                           , preshared_key: ?[NOISE_SYMMETRIC_KEY_LEN] u8) !*Engine.Session {
+                           , preshared_key: ?*const [NOISE_SYMMETRIC_KEY_LEN] u8) !*Engine.Session {
     return Engine.Session.getOrCreate(self, public_key, preshared_key);
   }
 
