@@ -54,6 +54,7 @@ pub const Engine = struct.{
   hshake_chaining_key: [NOISE_HASH_LEN]u8,
   prng: Isaac64,
   static_identity: NoiseStaticIdent,
+  sys_unixtime: fn () u64,
 
   const SessionHashMap = HashMap([]const u8, Session, mem.hash_slice_u8, mem.eql_slice_u8);
 
@@ -329,7 +330,10 @@ pub const Engine = struct.{
 
   }; //X:E Session
 
-  pub fn init(allocator: *Allocator, ident: []const u8, identkey: []const u8) !Engine {
+  pub fn init( allocator: *Allocator
+             , ident: []const u8
+             , identkey: []const u8
+             , sys_unixtime: fn () u64) !Engine {
     var rbuf: [8]u8 = undefined;
     try std.os.getRandomBytes(rbuf[0..]);
     const seed = mem.readInt(rbuf[0..8], u64, builtin.Endian.Little);
@@ -341,6 +345,7 @@ pub const Engine = struct.{
       .hshake_chaining_key = undefined,
       .prng = Isaac64.init(seed),
       .static_identity = undefined,
+      .sys_unixtime = sys_unixtime,
     };
 
     // calculate chaining keys
@@ -399,9 +404,15 @@ test "default" {
   const g_identkey = "BLANK KEY";
 
   //init engines
-  var e1 = try Engine.init(debug.global_allocator, g_ident, g_identkey);
+  var e1 = try Engine.init( debug.global_allocator
+                          , g_ident
+                          , g_identkey
+                          , std.os.time.timestamp);
   defer e1.deinit();
-  var e2 = try Engine.init(debug.global_allocator, g_ident, g_identkey);
+  var e2 = try Engine.init( debug.global_allocator
+                          , g_ident
+                          , g_identkey
+                          , std.os.time.timestamp);
   defer e2.deinit();
 
   //generate random identities
